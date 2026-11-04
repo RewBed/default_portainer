@@ -1,0 +1,30 @@
+name: portainer
+
+services:
+  portainer:
+    image: ${PORTAINER_IMAGE:-portainer/portainer-ce:lts}
+    restart: unless-stopped
+    command: ["-H", "unix:///var/run/docker.sock", "--http-enabled"]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - data:/data
+    networks:
+      - proxy
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: proxy
+      traefik.http.routers.portainer.rule: Host(`${PORTAINER_DOMAIN:?Set PORTAINER_DOMAIN in .env}`)
+      traefik.http.routers.portainer.entrypoints: websecure
+      traefik.http.routers.portainer.tls.certresolver: letsencrypt
+      traefik.http.routers.portainer.service: portainer
+      traefik.http.services.portainer.loadbalancer.server.port: "9000"
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+
+volumes:
+  data:
+    name: portainer_data
+
